@@ -60,7 +60,6 @@ Future<String> generateResponse(String prompt) async {
     headers: {
       'Content-Type': 'application/json',
       "Authorization":
-          "Bearer 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"
     },
     body: json.encode({
       "model": "text-davinci-003",
