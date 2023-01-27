@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import 'package:http/http.dart' as http;
 import 'package:loader_skeleton/loader_skeleton.dart';
+import 'package:speech_to_text/speech_recognition_result.dart';
+import 'package:speech_to_text/speech_to_text.dart';
 
 import 'model.dart';
 
@@ -58,6 +60,7 @@ Future<String> generateResponse(String prompt) async {
     headers: {
       'Content-Type': 'application/json',
       "Authorization":
+          "Bearer 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"
     },
     body: json.encode({
       "model": "text-davinci-003",
@@ -89,8 +92,62 @@ class _Chat_homeState extends State<Chat_home> {
     // TODO: implement initState
     super.initState();
     isLoading = false;
+    _initSpeech();
+
+  }
+  SpeechToText _speechToText = SpeechToText();
+  bool _speechEnabled = false;
+  String _lastWords = '';
+
+  void _initSpeech() async {
+    _speechEnabled = await _speechToText.initialize();
+    setState(() {
+    });
   }
 
+  /// Each time to start a speech recognition session
+  void _startListening() async {
+    print('STARTING');
+
+    await _speechToText.listen(onResult: _onSpeechResult);
+    setState(() {
+      print('STARTING');
+
+      // _speechToText.isListening
+      //     ? '$_lastWords'
+      // // If listening isn't active but could be tell the user
+      // // how to start it, otherwise indicate that speech
+      // // recognition is not yet ready or not supported on
+      // // the target device
+      //     : _speechEnabled
+      //     ? 'Tap the microphone to start listening...'
+      //     : 'Speech not available',
+    });
+  }
+
+  /// Manually stop the active speech recognition session
+  /// Note that there are also timeouts that each platform enforces
+  /// and the SpeechToText plugin supports setting timeouts on the
+  /// listen method.
+  void _stopListening() async {
+    print('STOP');
+    await _speechToText.stop();
+    setState(() {
+      print('STOP');
+
+    });
+  }
+
+  /// This is the callback that the SpeechToText plugin calls when
+  /// the platform returns recognized words.
+  void _onSpeechResult(SpeechRecognitionResult result) {
+    setState(() {
+      _lastWords = result.recognizedWords;
+      print(_lastWords);
+      _textController.text=result.recognizedWords;
+
+    });
+  }
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -136,14 +193,18 @@ class _Chat_homeState extends State<Chat_home> {
       child: Container(
         color: botBackgroundColor,
         child: IconButton(
-          icon: const Icon(Icons.mic,
+          icon:  Icon(_speechToText.isNotListening ? Icons.mic : Icons.mic_off,
               color: Colors.white //Color.fromRGBO(142, 142, 160, 1),
               ),
-          onPressed: () async {},
+          onPressed: ()  {
+            _speechToText.isNotListening ? _startListening : _stopListening;
+
+          },
         ),
       ),
     );
   }
+
 
   Widget _buildSubmit() {
     return Visibility(
@@ -247,19 +308,35 @@ class ChatMessageWidget extends StatefulWidget {
 
 class _ChatMessageWidgetState extends State<ChatMessageWidget> {
   FlutterTts ftts = FlutterTts();
+  bool isplaying=false;
 
   play_text(String text) async {
     await ftts.setLanguage("en-US");
-    await ftts.setSpeechRate(0.5); //speed of speech
+    await ftts.setSpeechRate(0.4); //speed of speech
     await ftts.setVolume(100.0); //volume of speech
-    await ftts.setPitch(1); //pitc of sound
+    await ftts.setPitch(1);
+    //ftts.awaitSpeakCompletion(true);//pitc of sound
     //play text to sp
-    var result = await ftts.speak(text);
+    var result = await ftts.speak(text).whenComplete((){
+      setState(() {
+        //speaking
+        isplaying=false;
+      });
+    });
     if (result == 1) {
-      //speaking
+      setState(() {
+        //speaking
+        isplaying=true;
+      });
     } else {
+      setState(() {
+        isplaying=false;
+      });
       //not speaking
     }
+  }
+  pause_text(){
+
   }
 
   @override
@@ -267,7 +344,7 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
     return Padding(
       padding: const EdgeInsets.all(12.0),
       child: Container(
-        width: MediaQuery.of(context).size.width / 2,
+        width:double.infinity, //MediaQuery.of(context).size.width / 2,
         margin: const EdgeInsets.symmetric(vertical: 10.0),
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
@@ -278,9 +355,9 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
         ),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisAlignment: widget.chatMessageType == ChatMessageType.bot
-              ? MainAxisAlignment.start
-              : MainAxisAlignment.end,
+          // mainAxisAlignment: widget.chatMessageType == ChatMessageType.bot
+          //     ? MainAxisAlignment.start
+          //     : MainAxisAlignment.end,
           children: <Widget>[
             if (widget.chatMessageType == ChatMessageType.bot)
               Container(
@@ -294,23 +371,22 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
                 ),
               ),
             Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  Container(
-                    padding: const EdgeInsets.all(8.0),
-                    decoration: const BoxDecoration(
-                      borderRadius: BorderRadius.all(Radius.circular(8.0)),
-                    ),
-                    child: Text(
-                      widget.text,
-                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                          color: widget.chatMessageType == ChatMessageType.bot
-                              ? Colors.white
-                              : Colors.black),
-                    ),
+              child: Container(
+                padding: const EdgeInsets.all(8.0),
+                decoration: const BoxDecoration(
+                  borderRadius: BorderRadius.all(Radius.circular(8.0)),
+                ),
+                child: Align(
+                  alignment: widget.chatMessageType == ChatMessageType.bot? Alignment.centerLeft:Alignment.centerRight,
+                  child: Text(
+                    widget.text,
+                    textAlign: widget.chatMessageType == ChatMessageType.bot?TextAlign.start:TextAlign.end,
+                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                        color: widget.chatMessageType == ChatMessageType.bot
+                            ? Colors.white
+                            : Colors.black),
                   ),
-                ],
+                ),
               ),
             ),
             if (widget.chatMessageType != ChatMessageType.bot)
@@ -322,9 +398,55 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
                   ),
                 ),
               )
+            else
+                  _playButton(widget.text),
           ],
         ),
       ),
     );
   }
+  Widget _playButton(String string_to_play) {
+    return Visibility(
+      visible: !isplaying,
+      replacement: Container(
+        //color: Colors.white,
+        child: IconButton(
+          icon: const Icon(Icons.pause,
+              size: 40,
+              color: Colors.white //Color.fromRGBO(142, 142, 160, 1),
+
+          ),
+          onPressed: () async {
+            ftts.pause();
+            setState(() {
+              isplaying=false;
+            });
+          },
+        ),
+      ),
+      child: Container(
+       // color: Colors.white,
+        child: IconButton(
+          icon: const Icon(Icons.play_circle,
+              size: 40,
+              color: Colors.white //Color.fromRGBO(142, 142, 160, 1),
+
+          ),
+          onPressed: () async {
+            setState(() {
+              isplaying=true;
+            });
+            await play_text(string_to_play).whenComplete((){
+              setState(() {
+                //speaking
+                //isplaying=false;
+              });
+            });
+
+          },
+        ),
+      ),
+    );
+  }
+
 }

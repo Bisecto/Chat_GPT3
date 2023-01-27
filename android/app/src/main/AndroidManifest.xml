@@ -2,9 +2,20 @@
     package="com.example.chat_gpt">
     <uses-permission android:name="android.permission.INTERNET">
 
+
     </uses-permission>
+    <uses-permission android:name="android.permission.RECORD_AUDIO"/>
+    <uses-permission android:name="android.permission.INTERNET"/>
+    <uses-permission android:name="android.permission.BLUETOOTH"/>
+    <uses-permission android:name="android.permission.BLUETOOTH_ADMIN"/>
+    <uses-permission android:name="android.permission.BLUETOOTH_CONNECT"/>
+    <queries>
+        <intent>
+            <action android:name="android.speech.RecognitionService" />
+        </intent>
+    </queries>
    <application
-        android:label="chat_gpt"
+        android:label="chat gpt"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity
