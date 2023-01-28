@@ -58,11 +58,12 @@ Future<String> generateResponse(String prompt) async {
     headers: {
       'Content-Type': 'application/json',
       "Authorization":
+          "Bearer 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"
     },
     body: json.encode({
       "model": "text-davinci-003",
       "prompt":
-          "pretend you are jesus christ from new international version bible.$prompt",
+          "pretend you are jesus christ from new international version bible $prompt",
       'temperature': 0.8,
       'max_tokens': 1000,
       'top_p': 1,
@@ -107,12 +108,16 @@ class _Chat_homeState extends State<Chat_home> {
             child: ListView(
               children: [
                 _buildList(),
-                Visibility(
-                    visible: isLoading,
-                    child: CardSkeleton(
-                      isCircularImage: true,
-                      isBottomLinesActive: false,
-                    ))
+                Padding(
+                  padding:
+                  EdgeInsets.only(right: MediaQuery.of(context).size.width/4,left:12,top: 12,bottom: 12),
+                  child: Visibility(
+                      visible: isLoading,
+                      child: CardSkeleton(
+                        isCircularImage: true,
+                        isBottomLinesActive: false,
+                      )),
+                )
               ],
             ),
           ),
@@ -144,7 +149,6 @@ class _Chat_homeState extends State<Chat_home> {
       ),
     );
   }
-
 
   Widget _buildSubmit() {
     return Visibility(
@@ -248,7 +252,8 @@ class ChatMessageWidget extends StatefulWidget {
 
 class _ChatMessageWidgetState extends State<ChatMessageWidget> {
   FlutterTts ftts = FlutterTts();
-  bool isplaying=false;
+  bool isplaying = false;
+
   play_text(String text) async {
     await ftts.setLanguage("en-US");
     await ftts.setSpeechRate(0.4); //speed of speech
@@ -256,34 +261,35 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
     await ftts.setPitch(1);
     //ftts.awaitSpeakCompletion(true);//pitc of sound
     //play text to sp
-    var result = await ftts.speak(text).whenComplete((){
+    var result = await ftts.speak(text).whenComplete(() {
       setState(() {
         //speaking
-        isplaying=false;
+        isplaying = false;
       });
     });
     if (result == 1) {
       setState(() {
         //speaking
-        isplaying=true;
+        isplaying = true;
       });
     } else {
       setState(() {
-        isplaying=false;
+        isplaying = false;
       });
       //not speaking
     }
   }
-  pause_text(){
 
-  }
+  pause_text() {}
 
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.all(12.0),
+      padding: widget.chatMessageType == ChatMessageType.bot?
+       EdgeInsets.only(right: MediaQuery.of(context).size.width/4,left:12,top: 12,bottom: 12): EdgeInsets.only(right: 12,left:MediaQuery.of(context).size.width/4,top: 12,bottom: 12),
       child: Container(
-        width:double.infinity, //MediaQuery.of(context).size.width / 2,
+        width: double.infinity,
+        //MediaQuery.of(context).size.width / 2,
         margin: const EdgeInsets.symmetric(vertical: 10.0),
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
@@ -300,32 +306,53 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
           children: <Widget>[
             if (widget.chatMessageType == ChatMessageType.bot)
               Container(
-                margin: const EdgeInsets.only(right: 16.0),
+                height: 35,
+                width: 35,
+                margin: const EdgeInsets.only(right: 10.0),
                 child: const CircleAvatar(
                   backgroundColor: Color.fromRGBO(16, 163, 127, 1),
                   child: Icon(
                     Icons.android,
+                    //size: 30,
                     color: Colors.white,
                   ),
                 ),
               ),
             Expanded(
-              child: Container(
-                padding: const EdgeInsets.all(8.0),
-                decoration: const BoxDecoration(
-                  borderRadius: BorderRadius.all(Radius.circular(8.0)),
-                ),
-                child: Align(
-                  alignment: widget.chatMessageType == ChatMessageType.bot? Alignment.centerLeft:Alignment.centerRight,
-                  child: Text(
-                    widget.text.trim(),
-                    textAlign: widget.chatMessageType == ChatMessageType.bot?TextAlign.start:TextAlign.end,
-                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                        color: widget.chatMessageType == ChatMessageType.bot
-                            ? Colors.white
-                            : Colors.black),
+              child: Column(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(5.0),
+                    decoration: const BoxDecoration(
+                      borderRadius: BorderRadius.all(Radius.circular(8.0)),
+                    ),
+                    child: Align(
+                      alignment: widget.chatMessageType == ChatMessageType.bot
+                          ? Alignment.centerLeft
+                          : Alignment.centerRight,
+                      child: Text(
+                        widget.text.trim(),
+                        textAlign: widget.chatMessageType == ChatMessageType.bot
+                            ? TextAlign.start
+                            : TextAlign.end,
+                        style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                            color: widget.chatMessageType == ChatMessageType.bot
+                                ? Colors.white
+                                : Colors.black),
+                      ),
+                    ),
                   ),
-                ),
+                  if (widget.chatMessageType == ChatMessageType.bot)
+                    Center(
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        children: [
+                          _playButton(widget.text),
+                          _shareButton()
+                        ],
+                      ),
+                    ),
+                ],
               ),
             ),
             if (widget.chatMessageType != ChatMessageType.bot)
@@ -337,13 +364,22 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
                   ),
                 ),
               )
-            else
-                  _playButton(widget.text),
+            // else
+            //   Center(
+            //     child: Column(
+            //       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            //       children: [
+            //         _playButton(widget.text),
+            //         _shareButton()
+            //       ],
+            //     ),
+            //   ),
           ],
         ),
       ),
     );
   }
+
   Widget _playButton(String string_to_play) {
     return Visibility(
       visible: !isplaying,
@@ -351,41 +387,60 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
         //color: Colors.white,
         child: IconButton(
           icon: const Icon(Icons.pause,
-              size: 40,
-              color: Colors.white //Color.fromRGBO(142, 142, 160, 1),
+              size: 40, color: Colors.white //Color.fromRGBO(142, 142, 160, 1),
 
-          ),
+              ),
           onPressed: () async {
             ftts.pause();
             setState(() {
-              isplaying=false;
+              isplaying = false;
             });
           },
         ),
       ),
       child: Container(
-       // color: Colors.white,
+        // color: Colors.white,
         child: IconButton(
           icon: const Icon(Icons.play_circle,
-              size: 40,
-              color: Colors.white //Color.fromRGBO(142, 142, 160, 1),
+              size: 30, color: Colors.white //Color.fromRGBO(142, 142, 160, 1),
 
-          ),
+              ),
           onPressed: () async {
             setState(() {
-              isplaying=true;
+              isplaying = true;
             });
-            await play_text(string_to_play).whenComplete((){
+            await play_text(string_to_play).whenComplete(() {
               setState(() {
                 //speaking
                 //isplaying=false;
               });
             });
-
           },
         ),
       ),
     );
   }
 
+  Widget _shareButton() {
+    return Container(
+      // color: Colors.white,
+      child: IconButton(
+        icon: const Icon(Icons.share,
+            size: 30, color: Colors.white //Color.fromRGBO(142, 142, 160, 1),
+
+            ),
+        onPressed: () async {
+          // setState(() {
+          //   isplaying = true;
+          // });
+          // await play_text(string_to_play).whenComplete(() {
+          //   setState(() {
+          //     //speaking
+          //     //isplaying=false;
+          //   });
+          // });
+        },
+      ),
+    );
+  }
 }
