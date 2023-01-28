@@ -15,7 +15,7 @@
         </intent>
     </queries>
    <application
-        android:label="chat gpt"
+        android:label="Chat bot"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity

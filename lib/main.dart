@@ -3,8 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import 'package:http/http.dart' as http;
 import 'package:loader_skeleton/loader_skeleton.dart';
-import 'package:speech_to_text/speech_recognition_result.dart';
-import 'package:speech_to_text/speech_to_text.dart';
 
 import 'model.dart';
 
@@ -91,62 +89,8 @@ class _Chat_homeState extends State<Chat_home> {
     // TODO: implement initState
     super.initState();
     isLoading = false;
-    _initSpeech();
-
-  }
-  SpeechToText _speechToText = SpeechToText();
-  bool _speechEnabled = false;
-  String _lastWords = '';
-
-  void _initSpeech() async {
-    _speechEnabled = await _speechToText.initialize();
-    setState(() {
-    });
   }
 
-  /// Each time to start a speech recognition session
-  void _startListening() async {
-    print('STARTING');
-
-    await _speechToText.listen(onResult: _onSpeechResult);
-    setState(() {
-      print('STARTING');
-
-      // _speechToText.isListening
-      //     ? '$_lastWords'
-      // // If listening isn't active but could be tell the user
-      // // how to start it, otherwise indicate that speech
-      // // recognition is not yet ready or not supported on
-      // // the target device
-      //     : _speechEnabled
-      //     ? 'Tap the microphone to start listening...'
-      //     : 'Speech not available',
-    });
-  }
-
-  /// Manually stop the active speech recognition session
-  /// Note that there are also timeouts that each platform enforces
-  /// and the SpeechToText plugin supports setting timeouts on the
-  /// listen method.
-  void _stopListening() async {
-    print('STOP');
-    await _speechToText.stop();
-    setState(() {
-      print('STOP');
-
-    });
-  }
-
-  /// This is the callback that the SpeechToText plugin calls when
-  /// the platform returns recognized words.
-  void _onSpeechResult(SpeechRecognitionResult result) {
-    setState(() {
-      _lastWords = result.recognizedWords;
-      print(_lastWords);
-      _textController.text=result.recognizedWords;
-
-    });
-  }
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -192,13 +136,10 @@ class _Chat_homeState extends State<Chat_home> {
       child: Container(
         color: botBackgroundColor,
         child: IconButton(
-          icon:  Icon(_speechToText.isNotListening ? Icons.mic : Icons.mic_off,
+          icon: const Icon(Icons.mic,
               color: Colors.white //Color.fromRGBO(142, 142, 160, 1),
               ),
-          onPressed: ()  {
-            _speechToText.isNotListening ? _startListening : _stopListening;
-
-          },
+          onPressed: () async {},
         ),
       ),
     );
@@ -308,7 +249,6 @@ class ChatMessageWidget extends StatefulWidget {
 class _ChatMessageWidgetState extends State<ChatMessageWidget> {
   FlutterTts ftts = FlutterTts();
   bool isplaying=false;
-
   play_text(String text) async {
     await ftts.setLanguage("en-US");
     await ftts.setSpeechRate(0.4); //speed of speech
@@ -378,7 +318,7 @@ class _ChatMessageWidgetState extends State<ChatMessageWidget> {
                 child: Align(
                   alignment: widget.chatMessageType == ChatMessageType.bot? Alignment.centerLeft:Alignment.centerRight,
                   child: Text(
-                    widget.text,
+                    widget.text.trim(),
                     textAlign: widget.chatMessageType == ChatMessageType.bot?TextAlign.start:TextAlign.end,
                     style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                         color: widget.chatMessageType == ChatMessageType.bot
